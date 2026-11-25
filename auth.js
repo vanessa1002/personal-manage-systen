@@ -64,7 +64,8 @@ if (!isFirebaseConfigured) {
         const ref = dataRef(user.uid);
         const snapshot = await getDoc(ref);
         if (revision !== authRevision) return;
-        if (!window.dayflow) throw new Error("日序資料介面尚未初始化，請重新整理頁面。");
+        if (!window.dayflow) throw new Error("日序資料介面尚未載入。");
+        await window.dayflow.ready;
         if (snapshot.exists()) {
           window.dayflow.load(snapshot.data());
         } else {
@@ -80,7 +81,7 @@ if (!isFirebaseConfigured) {
       } catch (error) {
         if (revision !== authRevision) return;
         showSignedOut();
-        status.textContent = `個人資料載入失敗：${error.message}。請確認已啟用 Cloud Firestore 並發布 firestore.rules。`;
+        status.textContent = `個人資料載入失敗：${error.message}`;
       }
     }, (error) => {
       showSignedOut();
