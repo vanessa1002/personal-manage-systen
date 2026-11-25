@@ -4,7 +4,7 @@ import {
   GoogleAuthProvider,
   getAuth,
   onAuthStateChanged,
-  signInWithPopup,
+  signInWithRedirect,
   signOut,
 } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
 import {
@@ -103,14 +103,11 @@ if (!isFirebaseConfigured) {
 
     signInButton.addEventListener("click", async () => {
       signInButton.disabled = true;
-      status.textContent = "正在開啟 Google 登入…";
+      status.textContent = "正在前往 Google 登入…";
       try {
-        await signInWithPopup(auth, provider);
+        await signInWithRedirect(auth, provider);
       } catch (error) {
-        status.textContent = error.code === "auth/popup-closed-by-user"
-          ? "登入視窗已關閉，請再試一次。"
-          : `登入失敗：${error.message}`;
-      } finally {
+        status.textContent = `登入失敗：${error.message}`;
         signInButton.disabled = false;
       }
     });
