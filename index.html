@@ -42,7 +42,7 @@ body.authenticated .auth-account{display:flex}.auth-account button{border:0;bord
 <div class="modal-backdrop" id="settingsModal"><div class="modal"><div class="modal-head"><h2>提醒與設定</h2><button class="close" data-close>×</button></div><div class="form"><div class="field full"><label>每日摘要時間</label><input type="time" value="07:00" id="digestTime"></div><div class="field full"><label>行程提醒</label><select id="eventReminder"><option>行程前 10 分鐘</option><option>行程前 15 分鐘</option><option>行程前 30 分鐘</option></select></div><div class="field full"><label>提醒方式</label><input value="僅在系統內顯示（原型）" disabled></div></div><div class="modal-actions"><button class="primary" data-close>完成</button></div></div></div>
 <script src="./dayflow-bridge.js?v=attach-20261125"></script>
 <script>
-const TODAY=new Date(); TODAY.setHours(0,0,0,0);let calendarMonth=new Date(TODAY.getFullYear(),TODAY.getMonth(),1),selectedDate=iso(TODAY),calendarView='day';const pad=n=>String(n).padStart(2,'0'),iso=d=>`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`,offsetDate=(n)=>{let d=new Date(TODAY);d.setDate(d.getDate()+n);return iso(d)},fmtDate=(d,opts={month:'long',day:'numeric',weekday:'long'})=>new Intl.DateTimeFormat('zh-TW',opts).format(d),hourText=h=>`${pad(Math.floor(h)%24)}:${h%1?'30':'00'}`
+const TODAY=new Date(); TODAY.setHours(0,0,0,0);const pad=n=>String(n).padStart(2,'0'),iso=d=>`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`,offsetDate=(n)=>{let d=new Date(TODAY);d.setDate(d.getDate()+n);return iso(d)},fmtDate=(d,opts={month:'long',day:'numeric',weekday:'long'})=>new Intl.DateTimeFormat('zh-TW',opts).format(d),hourText=h=>`${pad(Math.floor(h)%24)}:${h%1?'30':'00'}`;let calendarMonth=new Date(TODAY.getFullYear(),TODAY.getMonth(),1),selectedDate=iso(TODAY),calendarView='day'
 let categories=['工作','個人','學習','生活'];
 let events=[{title:'晨間整理與今日規劃',start:7.5,duration:.5,category:'個人',color:'green'},{title:'產品設計週會',start:9,duration:1,category:'工作',color:'blue'},{title:'提案內容整理',start:11,duration:1.5,category:'工作',color:'amber'},{title:'閱讀與學習',start:14,duration:1,category:'學習',color:'violet'},{title:'回覆重要信件',start:16,duration:.5,category:'工作',color:'green'}];
 let tasks=[{id:1,title:'完成季度企劃提案',priority:'high',duration:2,due:offsetDate(0),category:'工作',start:null,day:offsetDate(0),done:false},{id:2,title:'預約下週健康檢查',priority:'high',duration:.5,due:offsetDate(1),category:'生活',start:null,day:offsetDate(0),done:false},{id:3,title:'整理產品訪談筆記',priority:'medium',duration:1,due:offsetDate(2),category:'工作',start:null,day:offsetDate(0),done:false},{id:4,title:'讀完設計趨勢文章',priority:'low',duration:.75,due:offsetDate(3),category:'學習',start:null,day:offsetDate(0),done:false},{id:5,title:'準備週末採買清單',priority:'low',duration:.5,due:offsetDate(4),category:'個人',start:null,day:offsetDate(0),done:true}];window.dayflow.attach({
@@ -82,7 +82,7 @@ function refreshCategories(){let sel=document.getElementById('categorySelect');i
   </section>
 </div>
 <div class="auth-account" id="authAccount"><span id="authEmail"></span><button id="googleSignOut" type="button">登出</button></div>
-<script type="module" src="./auth.js?v=loadstatus-20261125"></script>
+<script type="module" src="./auth.js?v=initorder-20261125"></script>
 </body></html>
 
 
