@@ -34,6 +34,14 @@ function dataRef(uid) {
   return doc(db, "users", uid, "dayflow", "main");
 }
 
+function withTimeout(promise, milliseconds, message) {
+  let timer;
+  const timeout = new Promise((_, reject) => {
+    timer = setTimeout(() => reject(new Error(message)), milliseconds);
+  });
+  return Promise.race([promise, timeout]).finally(() => clearTimeout(timer));
+}
+
 if (!isFirebaseConfigured) {
   status.textContent = "尚未設定 Firebase。請先填入 firebase-config.js 的專案設定。";
 } else {
@@ -61,16 +69,20 @@ if (!isFirebaseConfigured) {
       gate.hidden = false;
       status.textContent = "正在載入你的個人資料…";
       try {
-        const ref = dataRef(user.uid);
-        const snapshot = await getDoc(ref);
-        if (revision !== authRevision) return;
         if (!window.dayflow) throw new Error("日序資料介面尚未載入。");
-        await window.dayflow.ready;
+        status.textContent = "正在準備日序資料…";
+        await withTimeout(window.dayflow.ready, 10000, "日序資料介面初始化逾時");
+
+        status.textContent = "正在連線讀取 Firestore…";
+        const ref = dataRef(user.uid);
+        const snapshot = await withTimeout(getDoc(ref), 15000, "Firestore 讀取逾時");
+        if (revision !== authRevision) return;
         if (snapshot.exists()) {
           window.dayflow.load(snapshot.data());
         } else {
           // Each new account gets its own copy of the starter examples.
-          await setDoc(ref, window.dayflow.snapshot());
+          status.textContent = "正在建立你的個人資料…";
+          await withTimeout(setDoc(ref, window.dayflow.snapshot()), 15000, "Firestore 寫入逾時");
         }
         if (revision !== authRevision) return;
         activeUid = user.uid;
