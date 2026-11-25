@@ -40,7 +40,7 @@ body.authenticated .auth-account{display:flex}.auth-account button{border:0;bord
 <div class="modal-backdrop" id="taskModal"><div class="modal"><div class="modal-head"><h2 id="modalTitle">新增任務</h2><button class="close" data-close>×</button></div><form id="taskForm"><div class="form"><div class="field full"><label>任務名稱</label><input name="title" required placeholder="例如：完成提案初稿"></div><div class="field"><label>優先級</label><select name="priority"><option value="high">高</option><option value="medium" selected>中</option><option value="low">低</option></select></div><div class="field"><label>預估時間（小時）</label><input name="duration" type="number" min="0.25" max="19" step="0.25" value="1" required></div><div class="field"><label>期限</label><input name="due" type="date" required></div><div class="field"><label>類別</label><div style="display:flex;gap:6px"><select name="category" id="categorySelect" style="flex:1"></select><button type="button" class="secondary" id="addCategory" style="padding:6px 9px">＋</button></div></div><div class="field"><label>安排開始時間（選填）</label><input name="start" type="time"></div><div class="field"><label>安排日期</label><input name="day" type="date"></div></div><div class="modal-actions"><button type="button" class="secondary" data-close>取消</button><button class="primary">儲存任務</button></div></form></div></div>
 <div class="modal-backdrop" id="alertModal"><div class="modal"><div class="modal-head"><h2>提醒中心</h2><button class="close" data-close>×</button></div><div class="alert-list" id="alertList"></div><div class="modal-actions"><button class="primary" data-close>知道了</button></div></div></div>
 <div class="modal-backdrop" id="settingsModal"><div class="modal"><div class="modal-head"><h2>提醒與設定</h2><button class="close" data-close>×</button></div><div class="form"><div class="field full"><label>每日摘要時間</label><input type="time" value="07:00" id="digestTime"></div><div class="field full"><label>行程提醒</label><select id="eventReminder"><option>行程前 10 分鐘</option><option>行程前 15 分鐘</option><option>行程前 30 分鐘</option></select></div><div class="field full"><label>提醒方式</label><input value="僅在系統內顯示（原型）" disabled></div></div><div class="modal-actions"><button class="primary" data-close>完成</button></div></div></div>
-<script src="./dayflow-bridge.js"></script>
+<script src="./dayflow-bridge.js?v=cachefix-20261125"></script>
 <script>
 const TODAY=new Date(); TODAY.setHours(0,0,0,0);let calendarMonth=new Date(TODAY.getFullYear(),TODAY.getMonth(),1),selectedDate=iso(TODAY),calendarView='day';const pad=n=>String(n).padStart(2,'0'),iso=d=>`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`,offsetDate=(n)=>{let d=new Date(TODAY);d.setDate(d.getDate()+n);return iso(d)},fmtDate=(d,opts={month:'long',day:'numeric',weekday:'long'})=>new Intl.DateTimeFormat('zh-TW',opts).format(d),hourText=h=>`${pad(Math.floor(h)%24)}:${h%1?'30':'00'}`
 let categories=['工作','個人','學習','生活'];
@@ -82,7 +82,7 @@ function refreshCategories(){let sel=document.getElementById('categorySelect');i
   </section>
 </div>
 <div class="auth-account" id="authAccount"><span id="authEmail"></span><button id="googleSignOut" type="button">登出</button></div>
-<script type="module" src="./auth.js"></script>
+<script type="module" src="./auth.js?v=cachefix-20261125"></script>
 </body></html>
 
 
