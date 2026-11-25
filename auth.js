@@ -65,6 +65,26 @@ function withTimeout(promise, milliseconds, message) {
   return Promise.race([promise, timeout]).finally(() => clearTimeout(timer));
 }
 
+function waitForAuthenticatedUser(auth, milliseconds = 8000) {
+  if (auth.currentUser) return Promise.resolve(auth.currentUser);
+  return new Promise((resolve) => {
+    let unsubscribe = () => {};
+    let resolved = false;
+    const timer = setTimeout(() => {
+      unsubscribe();
+      resolve(null);
+    }, milliseconds);
+    unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (!user) return;
+      resolved = true;
+      clearTimeout(timer);
+      unsubscribe();
+      resolve(user);
+    });
+    if (resolved) unsubscribe();
+  });
+}
+
 async function loadUserData(user) {
   if (!user) return;
   if (activeUid === user.uid && document.body.classList.contains("authenticated")) return;
@@ -121,7 +141,11 @@ function completeRedirectSignIn(auth) {
         15000,
         "Google 登入結果讀取逾時"
       );
-      const user = result?.user || auth.currentUser;
+      let user = result?.user || auth.currentUser;
+      if (!user) {
+        status.textContent = "正在確認 Google 登入狀態…";
+        user = await waitForAuthenticatedUser(auth);
+      }
       setPendingRedirect(false);
       if (user) {
         await loadUserData(user);
@@ -131,7 +155,7 @@ function completeRedirectSignIn(auth) {
         authRevision++;
         loadingUid = null;
         showSignedOut();
-        status.textContent = "Google 登入未完成，請再試一次。";
+        status.textContent = "沒有收到 Firebase 登入憑證。請確認 Firebase Authentication 已啟用 Google 登入，且授權網域包含 vanessa1002.github.io，再重新登入。";
       }
       return user || null;
     } catch (error) {
