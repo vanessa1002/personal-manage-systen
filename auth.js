@@ -24,13 +24,33 @@ let activeUid = null;
 let saveQueue = Promise.resolve();
 let authRevision = 0;
 let loadingUid = null;
-let redirectResultPending = true;
+let redirectResultPending = false;
+let redirectResultPromise = null;
 let db;
+const REDIRECT_PENDING_KEY = "dayflow-google-redirect-pending";
+
+function hasPendingRedirect() {
+  try {
+    return sessionStorage.getItem(REDIRECT_PENDING_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
+
+function setPendingRedirect(pending) {
+  try {
+    if (pending) sessionStorage.setItem(REDIRECT_PENDING_KEY, "1");
+    else sessionStorage.removeItem(REDIRECT_PENDING_KEY);
+  } catch {
+    // Firebase's redirect result can still be processed if session storage is unavailable.
+  }
+}
 
 function showSignedOut() {
   activeUid = null;
   document.body.classList.remove("authenticated");
   gate.hidden = false;
+  signInButton.disabled = false;
 }
 
 function dataRef(uid) {
@@ -82,9 +102,49 @@ async function loadUserData(user) {
     if (revision !== authRevision) return;
     showSignedOut();
     status.textContent = `個人資料載入失敗：${error.message}`;
+    signInButton.disabled = false;
   } finally {
     if (loadingUid === user.uid) loadingUid = null;
   }
+}
+
+function completeRedirectSignIn(auth) {
+  if (redirectResultPromise) return redirectResultPromise;
+  if (!hasPendingRedirect()) return Promise.resolve(null);
+
+  redirectResultPending = true;
+  redirectResultPromise = (async () => {
+    status.textContent = "正在讀取 Google 登入結果…";
+    try {
+      const result = await withTimeout(
+        getRedirectResult(auth),
+        15000,
+        "Google 登入結果讀取逾時"
+      );
+      const user = result?.user || auth.currentUser;
+      setPendingRedirect(false);
+      if (user) {
+        await loadUserData(user);
+        redirectResultPending = false;
+      } else {
+        redirectResultPending = false;
+        authRevision++;
+        loadingUid = null;
+        showSignedOut();
+        status.textContent = "Google 登入未完成，請再試一次。";
+      }
+      return user || null;
+    } catch (error) {
+      setPendingRedirect(false);
+      redirectResultPending = false;
+      showSignedOut();
+      status.textContent = `Google 登入結果讀取失敗：${error.message}`;
+      return null;
+    } finally {
+      redirectResultPromise = null;
+    }
+  })();
+  return redirectResultPromise;
 }
 
 if (!isFirebaseConfigured) {
@@ -94,6 +154,7 @@ if (!isFirebaseConfigured) {
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     db = getFirestore(app);
+    redirectResultPending = hasPendingRedirect();
     const provider = new GoogleAuthProvider();
     provider.setCustomParameters({ prompt: "select_account" });
 
@@ -112,24 +173,22 @@ if (!isFirebaseConfigured) {
       }
       void loadUserData(user);
     }, (error) => {
+      setPendingRedirect(false);
       redirectResultPending = false;
       showSignedOut();
       status.textContent = `登入狀態讀取失敗：${error.message}`;
     });
 
-    withTimeout(getRedirectResult(auth), 15000, "Google 登入結果讀取逾時").then((result) => {
-      redirectResultPending = false;
-      if (result?.user) return loadUserData(result.user);
-      if (!auth.currentUser) {
-        authRevision++;
-        loadingUid = null;
-        showSignedOut();
-        status.textContent = "";
+    if (redirectResultPending) {
+      signInButton.disabled = true;
+      void completeRedirectSignIn(auth);
+    }
+
+    window.addEventListener("pageshow", (event) => {
+      if (event.persisted && hasPendingRedirect()) {
+        signInButton.disabled = true;
+        void completeRedirectSignIn(auth);
       }
-    }).catch((error) => {
-      redirectResultPending = false;
-      if (!auth.currentUser) showSignedOut();
-      status.textContent = `登入結果讀取失敗：${error.message}`;
     });
 
     window.addEventListener("dayflow-save", (event) => {
@@ -148,9 +207,14 @@ if (!isFirebaseConfigured) {
     signInButton.addEventListener("click", async () => {
       signInButton.disabled = true;
       status.textContent = "正在前往 Google 登入…";
+      setPendingRedirect(true);
+      redirectResultPending = true;
       try {
         await signInWithRedirect(auth, provider);
+        if (hasPendingRedirect()) void completeRedirectSignIn(auth);
       } catch (error) {
+        setPendingRedirect(false);
+        redirectResultPending = false;
         status.textContent = `登入失敗：${error.message}`;
         signInButton.disabled = false;
       }
@@ -160,6 +224,8 @@ if (!isFirebaseConfigured) {
       signOutButton.disabled = true;
       try {
         await saveQueue;
+        setPendingRedirect(false);
+        redirectResultPending = false;
         await signOut(auth);
       } catch (error) {
         status.textContent = `登出失敗：${error.message}`;
