@@ -64,6 +64,7 @@ if (!isFirebaseConfigured) {
         const ref = dataRef(user.uid);
         const snapshot = await getDoc(ref);
         if (revision !== authRevision) return;
+        if (!window.dayflow) throw new Error("日序資料介面尚未初始化，請重新整理頁面。");
         if (snapshot.exists()) {
           window.dayflow.load(snapshot.data());
         } else {
