@@ -5,7 +5,7 @@ import {
   getAuth,
   getRedirectResult,
   onAuthStateChanged,
-  signInWithRedirect,
+  signInWithPopup,
   signOut,
 } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
 import {
@@ -230,17 +230,24 @@ if (!isFirebaseConfigured) {
 
     signInButton.addEventListener("click", async () => {
       signInButton.disabled = true;
-      status.textContent = "正在前往 Google 登入…";
-      setPendingRedirect(true);
+      status.textContent = "正在開啟 Google 登入…";
       redirectResultPending = true;
       try {
-        await signInWithRedirect(auth, provider);
-        if (hasPendingRedirect()) void completeRedirectSignIn(auth);
+        const result = await signInWithPopup(auth, provider);
+        setPendingRedirect(false);
+        if (result?.user) {
+          await loadUserData(result.user);
+        } else {
+          redirectResultPending = false;
+          showSignedOut();
+          status.textContent = "Google 沒有回傳登入帳戶，請再試一次。";
+        }
       } catch (error) {
         setPendingRedirect(false);
         redirectResultPending = false;
-        status.textContent = `登入失敗：${error.message}`;
-        signInButton.disabled = false;
+        showSignedOut();
+        const code = error.code ? ` (${error.code})` : "";
+        status.textContent = `Google 登入失敗${code}：${error.message}`;
       }
     });
 
